@@ -1,0 +1,10 @@
+# Google AI Studio API key for Gemini
+google_ai_studio_api_key: "YOUR_API_KEY_HERE"
+
+# Google Classroom API
+# Note: Google Classroom requires OAuth 2.0 authentication, not just an API key
+# You need to download credentials.json from Google Cloud Console
+google_classroom_credentials_file: "credentials.json"
+
+# Optional: API key for other Google services
+google_classroom_api_key: "YOUR_API_KEY_HERE"

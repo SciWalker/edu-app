@@ -2,7 +2,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+config.yml
+credentials-desktop.json
+credentials-web.json
+token.pickle
 # C extensions
 *.so
 

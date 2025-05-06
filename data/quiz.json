@@ -1,0 +1,49 @@
+{
+  "title": "Genetic Mutation Quiz",
+  "questions": [
+    {
+      "question": "What is a genetic mutation?",
+      "type": "multiple_choice_question",
+      "options": [
+        "A change in the sequence of DNA",
+        "The process of cell division",
+        "The passing of traits from parent to offspring",
+        "The study of genes"
+      ],
+      "answer": "A change in the sequence of DNA"
+    },
+    {
+      "question": "Which of the following can cause genetic mutations?",
+      "type": "multiple_choice_question",
+      "options": [
+        "Exposure to radiation",
+        "Errors during DNA replication",
+        "Certain chemicals",
+        "All of the above"
+      ],
+      "answer": "All of the above"
+    },
+    {
+      "question": "What is a point mutation?",
+      "type": "multiple_choice_question",
+      "options": [
+        "A mutation affecting a single nucleotide",
+        "A mutation affecting a large segment of a chromosome",
+        "A mutation that causes the loss of a chromosome",
+        "A mutation that duplicates a chromosome"
+      ],
+      "answer": "A mutation affecting a single nucleotide"
+    },
+    {
+      "question": "Which type of mutation results in a premature stop codon?",
+      "type": "multiple_choice_question",
+      "options": [
+        "Nonsense mutation",
+        "Missense mutation",
+        "Silent mutation",
+        "Frameshift mutation"
+      ],
+      "answer": "Nonsense mutation"
+    }
+  ]
+}
