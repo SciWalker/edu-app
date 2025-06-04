@@ -2,6 +2,11 @@ from flask import Flask, jsonify, request
 import json
 import os
 from flask_cors import CORS
+from database import db, init_db_with_config
+from config import POSTGRES_CONFIG, FLASK_DEBUG, FLASK_HOST, FLASK_PORT
+
+# Initialize database with PostgreSQL configuration
+init_db_with_config(POSTGRES_CONFIG)
 
 app = Flask(__name__)
 CORS(app)
@@ -103,5 +108,65 @@ def google_classroom_classes():
         ]
         return jsonify(sample_classes)
 
+@app.route('/api/database/tables', methods=['GET'])
+def get_database_tables():
+    """Get a list of all tables in the database."""
+    try:
+        # Query to get all table names from PostgreSQL information schema
+        tables = db.execute_query("""
+            SELECT table_name as name FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+        """)
+        return jsonify(tables)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/database/table/<table_name>', methods=['GET'])
+def get_table_data(table_name):
+    """Get all data from a specific table."""
+    try:
+        # Validate table name to prevent SQL injection
+        valid_tables = [table['name'] for table in db.execute_query("""
+            SELECT table_name as name FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+        """)]
+        
+        if table_name not in valid_tables:
+            return jsonify({'error': f'Invalid table name: {table_name}'}), 400
+        
+        # Get table data
+        data = db.execute_query(f"SELECT * FROM {table_name}")
+        
+        # Get table schema
+        schema = db.execute_query(f"""
+            SELECT 
+                column_name as name,
+                ordinal_position as cid,
+                data_type as type,
+                is_nullable as notnull,
+                column_default as dflt_value,
+                CASE 
+                    WHEN constraint_type = 'PRIMARY KEY' THEN 1 
+                    ELSE 0 
+                END as pk
+            FROM 
+                information_schema.columns
+            LEFT JOIN 
+                information_schema.key_column_usage USING (column_name, table_name)
+            LEFT JOIN 
+                information_schema.table_constraints USING (constraint_name)
+            WHERE 
+                table_name = %s
+            ORDER BY 
+                ordinal_position
+        """, (table_name,))
+        
+        return jsonify({
+            'data': data,
+            'schema': schema
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=FLASK_DEBUG, host=FLASK_HOST, port=FLASK_PORT)

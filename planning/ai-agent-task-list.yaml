@@ -153,6 +153,8 @@ tasks:
     status: Completed
     notes: Replaced inline styles with Bootstrap Card, Badge, and Grid components
     
+
+
   - id: 23
     feature: UI Modernization
     description: Add responsive design improvements across all components
@@ -173,6 +175,31 @@ tasks:
     files: frontend
     status: Completed
     notes: All components render correctly with Bootstrap styling
+
+  - id: 27
+    feature: Database Management
+    description: >
+      Set up a database schema to manage education data with sqlite, including:
+        - Teacher table: tracks which subject each teacher taught in which semester.
+        - Student table: tracks which subjects each student attended, their scores, and their class names.
+        - Classes table: stores information about classes.
+        - Subject table: stores information about subjects.
+      Ensure relationships between tables are clearly defined (e.g., foreign keys for teacher-subject-semester, student-class-subject, etc).
+    status: Completed
+    priority: high
+    owner: database-team
+    tags: [database, schema, teacher, student, class, subject]
+    notes: Implemented database schema in schema.sql with proper relationships and created db.py module with CRUD operations
+
+  - id: 28
+    feature: Database Management
+    description: Add a tab in the frontend to show all database tables
+    files: frontend
+    status: Completed
+    priority: medium
+    owner: frontend-team
+    tags: [database, frontend, ui, tables]
+    notes: Created DatabaseTab.js component with table selection and data viewing functionality, added backend API endpoints for database access
 
 project_summary:
   name: SciWalker Educational Application

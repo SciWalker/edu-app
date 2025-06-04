@@ -4,3 +4,10 @@ google-generativeai
 langgraph
 pyyaml
 google-auth-oauthlib
+SQLAlchemy
+psycopg2-binary==2.9.6
+Flask-SQLAlchemy
+flask-cors
+flask
+python-dotenv==1.0.0
+supabase==1.0.3
