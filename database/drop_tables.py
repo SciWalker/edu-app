@@ -105,11 +105,57 @@ def drop_tables():
         print(f"Error dropping tables: {e}")
         sys.exit(1)
 
+def truncate_tables_reset_identity():
+    """Truncate all public tables and restart all SERIAL / IDENTITY sequences."""
+    try:
+        load_dotenv()
+        db_url = os.getenv("DATABASE_URL")
+        if not db_url:
+            print("DATABASE_URL not set")
+            sys.exit(1)
+        parsed_url = urlparse(db_url)
+        conn = psycopg2.connect(
+            dbname=parsed_url.path[1:],
+            user=parsed_url.username,
+            password=parsed_url.password,
+            host=parsed_url.hostname,
+            port=parsed_url.port,
+        )
+        conn.autocommit = True
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT tablename FROM pg_tables 
+            WHERE schemaname = 'public'
+        """)
+        tables = [row[0] for row in cur.fetchall()]
+        if not tables:
+            print("No tables found to truncate.")
+            return
+        print(f"Truncating tables and resetting sequences: {', '.join(tables)}")
+        for table in tables:
+            cur.execute(f'TRUNCATE TABLE "{table}" RESTART IDENTITY CASCADE;')
+        cur.close()
+        conn.close()
+        print("All tables truncated and sequences reset!\n")
+    except Exception as e:
+        print(f"Error truncating tables: {e}")
+        sys.exit(1)
+
 if __name__ == "__main__":
-    print("WARNING: This will drop ALL tables from the database!")
-    confirmation = input("Are you sure you want to continue? (yes/no): ")
-    
-    if confirmation.lower() == 'yes':
-        drop_tables()
+    print("Choose an action:\n1) Truncate all tables & reset IDs\n2) Drop all tables (dangerous)")
+    choice = input("Enter 1 or 2: ").strip()
+    if choice == '1':
+        confirm = input("This will DELETE ALL DATA but keep the schema. Continue? (yes/no): ")
+        if confirm.lower() == 'yes':
+            truncate_tables_reset_identity()
+        else:
+            print("Operation cancelled.")
+    elif choice == '2':
+        confirm = input("Type 'DROP' to confirm dropping ALL tables: ")
+        if confirm == 'DROP':
+            drop_tables()
+        else:
+            print("Operation cancelled.")
     else:
-        print("Operation cancelled.")
+        print("Invalid choice.")
