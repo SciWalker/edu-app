@@ -5,11 +5,9 @@
 The `edu-app` is a full-stack educational application designed to help teachers manage their classes, students, and subjects. It provides a web-based interface for viewing and managing educational data, as well as tools for generating educational content like quizzes using AI. The backend is built with Flask and PostgreSQL, and the frontend is a React application.
 
 ## Getting Started
-
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Prerequisites
-
 - Python 3.x
 - Node.js and npm
 - PostgreSQL
