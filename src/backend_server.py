@@ -4,6 +4,8 @@ import os
 from flask_cors import CORS
 from database import db, init_db_with_config
 from config import POSTGRES_CONFIG, FLASK_DEBUG, FLASK_HOST, FLASK_PORT
+import classroom_handler
+from langgraph_agent import GoogleClassroomAgent
 
 # Initialize database with PostgreSQL configuration
 init_db_with_config(POSTGRES_CONFIG)
@@ -165,6 +167,102 @@ def get_table_data(table_name):
             'data': data,
             'schema': schema
         })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/classroom/invite-student', methods=['POST'])
+def invite_single_student():
+    """Invite a single student to a Google Classroom course."""
+    try:
+        data = request.json
+        
+        # Validate required fields
+        if not all(key in data for key in ['course_id', 'email']):
+            return jsonify({'error': 'Missing required fields: course_id, email'}), 400
+        
+        result = classroom_handler.invite_student(data['course_id'], data['email'])
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/classroom/invite-multiple', methods=['POST'])
+def invite_multiple_students():
+    """Invite multiple students to Google Classroom courses."""
+    try:
+        data = request.json
+        
+        # Validate that students data is provided
+        if 'students' not in data or not isinstance(data['students'], list):
+            return jsonify({'error': 'Missing or invalid students data'}), 400
+        
+        result = classroom_handler.invite_multiple_students(data['students'])
+        
+        return jsonify(result)
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/classroom/langgraph-agent', methods=['POST'])
+def run_langgraph_agent():
+    """Run the LangGraph agent to process students from JSON and invite them to courses."""
+    try:
+        # Optional: accept custom JSON file path
+        data = request.json or {}
+        json_file_path = data.get('json_file_path', None)
+        
+        # Create and run the agent
+        agent = GoogleClassroomAgent()
+        result = agent.run(json_file_path)
+        
+        return jsonify({
+            'success': True,
+            'agent_result': result,
+            'message': 'LangGraph agent completed successfully'
+        })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': 'LangGraph agent failed'
+        }), 500
+
+@app.route('/api/classroom/students', methods=['GET'])
+def get_students_data():
+    """Get the current students data from the JSON file."""
+    try:
+        students_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'students.json')
+        
+        if not os.path.exists(students_file):
+            return jsonify({'error': 'Students data file not found'}), 404
+        
+        with open(students_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/classroom/students', methods=['POST'])
+def update_students_data():
+    """Update the students data in the JSON file."""
+    try:
+        data = request.json
+        
+        if 'students' not in data:
+            return jsonify({'error': 'Missing students data'}), 400
+        
+        students_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'students.json')
+        
+        with open(students_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+        
+        return jsonify({'success': True, 'message': 'Students data updated successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
