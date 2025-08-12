@@ -1,0 +1,49 @@
+{
+  "students_data": [
+    {
+      "first_name": "SciWalker",
+      "last_name": "Test",
+      "email": "thesciwalker@gmail.com",
+      "course_id": "772740435341"
+    },
+    {
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "email": "jane.smith@student.edu",
+      "course_id": "772740435341"
+    },
+    {
+      "first_name": "Mike",
+      "last_name": "Johnson",
+      "email": "mike.johnson@student.edu",
+      "course_id": "772740435341"
+    }
+  ],
+  "processed_students": [
+    {
+      "first_name": "SciWalker",
+      "last_name": "Test",
+      "email": "thesciwalker@gmail.com",
+      "course_id": "772740435341"
+    },
+    {
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "email": "jane.smith@student.edu",
+      "course_id": "772740435341"
+    },
+    {
+      "first_name": "Mike",
+      "last_name": "Johnson",
+      "email": "mike.johnson@student.edu",
+      "course_id": "772740435341"
+    }
+  ],
+  "errors": [
+    "Failed to invite thesciwalker@gmail.com: <HttpError 403 when requesting https://classroom.googleapis.com/v1/invitations?alt=json returned \"The caller does not have permission\". Details: \"The caller does not have permission\">",
+    "Failed to invite jane.smith@student.edu: <HttpError 409 when requesting https://classroom.googleapis.com/v1/invitations?alt=json returned \"Requested entity already exists\". Details: \"Requested entity already exists\">",
+    "Failed to invite mike.johnson@student.edu: <HttpError 409 when requesting https://classroom.googleapis.com/v1/invitations?alt=json returned \"Requested entity already exists\". Details: \"Requested entity already exists\">"
+  ],
+  "current_step": "Successfully processed 0 students",
+  "course_id": ""
+}

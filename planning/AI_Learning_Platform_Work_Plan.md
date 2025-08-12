@@ -116,53 +116,114 @@ Badge: Brain Booster Trophy
 
 ## Task List: AI Agent Development (Starting with a Chatbot)
 
-### 1. Planning & Requirements
-- Define the chatbot’s primary use case (e.g., FAQ, tutoring, scheduling, etc.)
-- Identify target users and their needs
-- List core features (text chat, context awareness, integrations, etc.)
-- Decide on the platform (web, mobile, messaging app, etc.)
+### 1. Backend Architecture
 
-### 2. Architecture & Technology Stack
-- Choose programming language(s) (e.g., Python, JavaScript)
-- Select AI/NLP frameworks (e.g., OpenAI GPT, Rasa, HuggingFace, LangChain)
-- Plan backend infrastructure (cloud, local server, serverless, etc.)
-- Decide on database/storage solutions for logs, user data, etc.
+#### Core Backend Framework
+- FastAPI instead of Flask (currently used) for:
+  - Better performance and async support
+  - Built-in API documentation with OpenAPI/Swagger
+  - Native type checking with Pydantic
+  - Better WebSocket support for real-time features
 
-### 3. Data Collection & Preparation
-- Gather sample conversations, FAQs, or relevant datasets
-- Clean and preprocess data (anonymize, format, etc.)
-- Define intents and entities (if using intent-based approach)
+#### AI/ML Integration
+- LangGraph (as specified) for agent orchestration
+- Integration with GPT5 (as specified)
+- Gemini API (already integrated) for cost-effective operations
+- LangChain for:
+  - Document processing
+  - Memory management
+  - Structured output parsing
 
-### 4. Model Selection & Training
-- Choose between pre-built models (e.g., GPT-3/4, Llama) or custom training
-- Fine-tune model on your dataset (if needed)
-- Evaluate model performance (accuracy, relevance, safety)
+#### Database Layer
+- PostgreSQL (already in use) with:
+  - TimescaleDB extension for time-series data (useful for analytics)
+  - PGVector extension for vector embeddings
+- Redis for:
+  - Caching
+  - Session management
+  - Real-time features
+  - Rate limiting
 
-### 5. Backend & API Development
-- Set up backend server (e.g., FastAPI, Flask, Node.js)
-- Implement endpoints for chat interaction
-- Integrate with chosen AI/NLP model
-- Add logging and analytics
+#### Security & Auth
+- OAuth 2.0 with Google (already integrated)
+- JWT for API authentication
+- Rate limiting middleware
+- CORS protection
+- Input validation with Pydantic
 
-### 6. Frontend Development
-- Design a simple chat UI (web/mobile)
-- Connect frontend to backend via API/WebSocket
-- Implement user authentication (optional)
+### 2. Frontend Architecture
 
-### 7. Testing
-- Unit tests for backend logic
-- Integration tests for end-to-end chat flow
-- User acceptance testing with sample users
+#### Core Framework
+- Keep React (already in use)
+- Add TypeScript for better type safety
+- Use Next.js for:
+  - Server-side rendering
+  - API routes
+  - Better SEO
+  - Image optimization
 
-### 8. Deployment
-- Set up hosting (cloud provider, on-premise, etc.)
-- Configure CI/CD for automated deployment
-- Monitor uptime and errors
+#### State Management
+- React Query for server state
+- Zustand for client state
+- React Context for theme/auth
 
-### 9. Iteration & Expansion
-- Collect user feedback
-- Improve model responses and UX
-- Plan for multi-modal input (voice, images) or agentic actions
+#### UI/UX
+- Replace Bootstrap with:
+  - Tailwind CSS for styling
+  - Headless UI for accessible components
+  - Framer Motion for animations
+  - React Hook Form for forms
+  - React Error Boundary for error handling
 
-- Develop minimum viable platform with one Quest Pack
-- Conduct pilot testing with target age group
+### 3. DevOps & Infrastructure
+
+#### Containerization
+- Docker (already in use)
+- Docker Compose for local development
+- Kubernetes for production
+
+#### CI/CD
+- GitHub Actions for:
+  - Automated testing
+  - Linting
+  - Security scanning
+  - Container builds
+
+#### Monitoring & Logging
+- OpenTelemetry for tracing
+- Prometheus for metrics
+- Grafana for visualization
+- ELK stack for log aggregation
+
+#### Cloud Infrastructure (AWS)
+- ECS/EKS for container orchestration
+- RDS for PostgreSQL
+- ElastiCache for Redis
+- CloudFront for CDN
+- S3 for static assets
+- Route53 for DNS
+- ACM for SSL certificates
+
+### 4. Additional Tools & Services
+
+#### Testing
+- pytest for backend
+- Jest and React Testing Library for frontend
+- Cypress for E2E testing
+- k6 for load testing
+
+#### Documentation
+- Swagger/OpenAPI for API docs
+- Storybook for UI components
+- MkDocs for project documentation
+
+#### Development Tools
+- ESLint + Prettier for code formatting
+- Husky for pre-commit hooks
+- TypeScript for type checking
+- mypy for Python type checking
+
+#### Analytics & Monitoring
+- Mixpanel for user analytics
+- Sentry for error tracking
+- New Relic for performance monitoring

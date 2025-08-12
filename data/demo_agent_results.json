@@ -1,0 +1,45 @@
+{
+  "students_data": [
+    {
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john.doe@student.edu",
+      "course_id": "128"
+    },
+    {
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "email": "jane.smith@student.edu",
+      "course_id": "128"
+    },
+    {
+      "first_name": "Mike",
+      "last_name": "Johnson",
+      "email": "mike.johnson@student.edu",
+      "course_id": "128"
+    }
+  ],
+  "processed_students": [
+    {
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john.doe@student.edu",
+      "course_id": "128"
+    },
+    {
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "email": "jane.smith@student.edu",
+      "course_id": "128"
+    },
+    {
+      "first_name": "Mike",
+      "last_name": "Johnson",
+      "email": "mike.johnson@student.edu",
+      "course_id": "128"
+    }
+  ],
+  "errors": [],
+  "current_step": "Successfully processed 3 students (DEMO MODE)",
+  "course_id": ""
+}

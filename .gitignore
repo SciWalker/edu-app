@@ -6,6 +6,7 @@ config.yml
 credentials-desktop.json
 credentials-web.json
 token.pickle
+temp
 # C extensions
 *.so
 
