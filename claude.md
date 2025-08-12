@@ -16,7 +16,11 @@ These instructions will get you a copy of the project up and running on your loc
 
 1.  **Activate virtual environment:**
     ```bash
+    # For Windows:
     C:\Users\User\projects\envs\.extraction_env\Scripts\Activate.ps1
+    
+    # For macOS:
+    source ~/Projects/local_envs/llm_extractor/bin/activate
     ```
 
 2.  **Install Python dependencies:**

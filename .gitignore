@@ -7,6 +7,8 @@ credentials-desktop.json
 credentials-web.json
 token.pickle
 temp
+node_modules/
+processed_data/
 # C extensions
 *.so
 

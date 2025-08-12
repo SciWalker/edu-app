@@ -1,11 +1,17 @@
 from flask import Flask, jsonify, request
 import json
 import os
+import sys
+from pathlib import Path
 from flask_cors import CORS
+
+# Add parent directory to path for imports
+sys.path.append(str(Path(__file__).parent.parent))
+
 from database import db, init_db_with_config
-from config import POSTGRES_CONFIG, FLASK_DEBUG, FLASK_HOST, FLASK_PORT
-import classroom_handler
-from langgraph_agent import GoogleClassroomAgent
+from src.config import POSTGRES_CONFIG, FLASK_DEBUG, FLASK_HOST, FLASK_PORT
+import src.classroom_handler as classroom_handler
+from src.langgraph_agent import GoogleClassroomAgent
 
 # Initialize database with PostgreSQL configuration
 init_db_with_config(POSTGRES_CONFIG)
