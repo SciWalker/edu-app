@@ -1,0 +1,5 @@
+{
+  "message": "Hello! Can you tell me about your capabilities?",
+  "user_id": "test_user", 
+  "chatbot_type": "langgraph_gemini"
+}

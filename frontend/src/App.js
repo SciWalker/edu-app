@@ -3,7 +3,7 @@ import { Container, Nav, Navbar, Tab, Row, Col } from 'react-bootstrap';
 import LessonPlanTab from './LessonPlanTab';
 import QuizTab from './QuizTab';
 import GoogleClassroomTab from './GoogleClassroomTab';
-import DatabaseTab from './DatabaseTab';
+import ChatbotTab from './ChatbotTab';
 import './App.css';
 
 function App() {
@@ -54,10 +54,10 @@ function App() {
               </Nav.Item>
               <Nav.Item>
                 <Nav.Link 
-                  active={activeTab === 'database'} 
-                  onClick={() => setActiveTab('database')}
+                  active={activeTab === 'chatbot'} 
+                  onClick={() => setActiveTab('chatbot')}
                 >
-                  Database
+                  AI Chatbot
                 </Nav.Link>
               </Nav.Item>
             </Nav>
@@ -72,8 +72,8 @@ function App() {
               <Tab.Pane active={activeTab === 'classroom'}>
                 <GoogleClassroomTab isActive={activeTab === 'classroom'} />
               </Tab.Pane>
-              <Tab.Pane active={activeTab === 'database'}>
-                <DatabaseTab isActive={activeTab === 'database'} />
+              <Tab.Pane active={activeTab === 'chatbot'}>
+                <ChatbotTab isActive={activeTab === 'chatbot'} />
               </Tab.Pane>
             </Tab.Content>
           </Col>

@@ -9,6 +9,7 @@ token.pickle
 temp
 node_modules/
 processed_data/
+uploads/
 # C extensions
 *.so
 

@@ -1,213 +1,328 @@
-import React, { useEffect, useState } from 'react';
-import { Container, Form, Button, Card, Row, Col, Spinner, Alert, Badge } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Form, Button, Card, Container, Row, Col, Spinner, Alert, ProgressBar } from 'react-bootstrap';
 
 const API_BASE = 'http://localhost:5000';
 
-function QuizTab({ isActive }) {
-  const [quiz, setQuiz] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+function QuizTab() {
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [processing, setProcessing] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [ocrResult, setOcrResult] = useState(null);
+  const [courses, setCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState('');
   const [error, setError] = useState(null);
-  const [lastFetchTime, setLastFetchTime] = useState(null);
+  const [success, setSuccess] = useState(null);
 
-  const fetchQuizData = () => {
-    setLoading(true);
-    setError(null);
-    
-    fetch(`${API_BASE}/api/quiz?t=${new Date().getTime()}`) // Add cache-busting parameter
-      .then(res => res.json())
-      .then(data => {
-        setQuiz(data);
-        setLoading(false);
-        setLastFetchTime(new Date());
-      })
-      .catch(e => {
-        setError('Failed to load quiz');
-        setLoading(false);
-      });
-  };
-
-  // Initial fetch on component mount
+  // Load Google Classroom courses on component mount
   useEffect(() => {
-    fetchQuizData();
+    fetchCourses();
   }, []);
 
-  // Refetch when tab becomes active
-  useEffect(() => {
-    if (isActive) {
-      fetchQuizData();
+  const fetchCourses = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/google-classroom-classes`);
+      const data = await response.json();
+      setCourses(data);
+      if (data.length > 0) {
+        setSelectedCourse(data[0].id); // Auto-select first course
+      }
+    } catch (err) {
+      setError('Failed to load Google Classroom courses');
     }
-  }, [isActive]);
-
-  const handleTitleChange = (value) => {
-    setQuiz({ ...quiz, title: value });
   };
 
-  const handleQuestionChange = (index, field, value) => {
-    const updatedQuestions = [...quiz.questions];
-    updatedQuestions[index] = { ...updatedQuestions[index], [field]: value };
-    setQuiz({ ...quiz, questions: updatedQuestions });
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setError(null);
+      setSuccess(null);
+      setOcrResult(null);
+      
+      // Create preview for image files
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => setPreview(e.target.result);
+        reader.readAsDataURL(file);
+      } else {
+        setPreview(null);
+      }
+    }
   };
 
-  const handleOptionChange = (questionIndex, optionIndex, value) => {
-    const updatedQuestions = [...quiz.questions];
-    const updatedOptions = [...updatedQuestions[questionIndex].options];
-    updatedOptions[optionIndex] = value;
-    updatedQuestions[questionIndex] = { 
-      ...updatedQuestions[questionIndex], 
-      options: updatedOptions 
-    };
-    setQuiz({ ...quiz, questions: updatedQuestions });
-  };
+  const processImage = async () => {
+    if (!selectedFile) {
+      setError('Please select an image file first');
+      return;
+    }
 
-  const handleAnswerChange = (questionIndex, value) => {
-    const updatedQuestions = [...quiz.questions];
-    updatedQuestions[questionIndex] = { 
-      ...updatedQuestions[questionIndex], 
-      answer: value 
-    };
-    setQuiz({ ...quiz, questions: updatedQuestions });
-  };
+    setProcessing(true);
+    setError(null);
+    setSuccess(null);
 
-  const handleSave = () => {
-    setSaving(true);
-    fetch(`${API_BASE}/api/quiz`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(quiz),
-    })
-      .then(res => res.json())
-      .then(() => setSaving(false))
-      .catch(() => {
-        setError('Failed to save quiz');
-        setSaving(false);
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      formData.append('extractionType', 'quiz'); // Use quiz extraction type
+
+      const response = await fetch(`${API_BASE}/api/ocr/process-upload`, {
+        method: 'POST',
+        body: formData
       });
+
+      const result = await response.json();
+
+      if (result.pipeline_status === 'success') {
+        setOcrResult(result);
+        setSuccess('✅ Image processed successfully! Review the generated quiz below.');
+      } else {
+        setError(`Quiz generation failed: ${result.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      setError(`Processing failed: ${err.message}`);
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  const handleRefresh = () => {
-    fetchQuizData();
-  };
+  const uploadToClassroom = async () => {
+    if (!ocrResult || !selectedCourse) {
+      setError('Please process an image and select a course first');
+      return;
+    }
 
-  if (loading) return (
-    <div className="d-flex justify-content-center my-5">
-      <Spinner animation="border" role="status">
-        <span className="visually-hidden">Loading...</span>
-      </Spinner>
-    </div>
-  );
-  
-  if (error) return <Alert variant="danger">{error}</Alert>;
-  if (!quiz) return <Alert variant="warning">No quiz data.</Alert>;
+    setUploading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/classroom/upload-quiz`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          courseId: selectedCourse,
+          quizData: ocrResult.extracted_data
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSuccess(`🎉 Successfully uploaded quiz to Google Classroom! Assignment: "${result.title}"`);
+        
+        // Clear the form after successful upload
+        setTimeout(() => {
+          setSelectedFile(null);
+          setPreview(null);
+          setOcrResult(null);
+        }, 3000);
+      } else {
+        setError(`Upload failed: ${result.error}`);
+      }
+    } catch (err) {
+      setError(`Upload failed: ${err.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <Container>
       <Card className="shadow-sm mb-4">
-        <Card.Header as="h5" className="bg-primary text-white d-flex justify-content-between align-items-center">
-          <span>Quiz Editor</span>
-          <Button 
-            variant="outline-light" 
-            size="sm" 
-            onClick={handleRefresh}
-            title="Refresh quiz data"
-          >
-            <i className="bi bi-arrow-clockwise"></i> Refresh
-          </Button>
+        <Card.Header as="h5" className="bg-primary text-white">
+          🧩 Quiz Creator - Upload & Generate Quizzes
         </Card.Header>
         <Card.Body>
-          {lastFetchTime && (
-            <Alert variant="info" className="mb-3 py-2">
-              <small>Last updated: {lastFetchTime.toLocaleTimeString()}</small>
-            </Alert>
-          )}
-          
-          <Form>
-            <Form.Group as={Row} className="mb-3">
-              <Form.Label column sm={2} className="fw-bold">Title:</Form.Label>
-              <Col sm={10}>
-                <Form.Control
-                  type="text"
-                  value={quiz.title}
-                  onChange={e => handleTitleChange(e.target.value)}
-                />
+          {/* File Upload Section */}
+          <Row className="mb-4">
+            <Col md={6}>
+              <Card className="h-100">
+                <Card.Header className="bg-light">
+                  <strong>1. Upload Image</strong>
+                </Card.Header>
+                <Card.Body>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Select educational content image:</Form.Label>
+                    <Form.Control
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="mb-2"
+                    />
+                    <Form.Text className="text-muted">
+                      Supported formats: JPG, PNG, GIF, WebP. Upload text/content that can be turned into quiz questions.
+                    </Form.Text>
+                  </Form.Group>
+
+                  {selectedFile && (
+                    <Alert variant="info">
+                      <strong>Selected:</strong> {selectedFile.name} 
+                      <br />
+                      <small>Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB</small>
+                    </Alert>
+                  )}
+
+                  <Button
+                    variant="success"
+                    onClick={processImage}
+                    disabled={!selectedFile || processing}
+                    className="w-100"
+                  >
+                    {processing ? (
+                      <>
+                        <Spinner as="span" animation="border" size="sm" className="me-2" />
+                        Generating Quiz...
+                      </>
+                    ) : (
+                      '🎯 Generate Quiz'
+                    )}
+                  </Button>
+                </Card.Body>
+              </Card>
+            </Col>
+
+            <Col md={6}>
+              <Card className="h-100">
+                <Card.Header className="bg-light">
+                  <strong>Image Preview</strong>
+                </Card.Header>
+                <Card.Body className="text-center">
+                  {preview ? (
+                    <img 
+                      src={preview} 
+                      alt="Preview" 
+                      style={{ 
+                        maxWidth: '100%', 
+                        maxHeight: '300px', 
+                        objectFit: 'contain',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px'
+                      }} 
+                    />
+                  ) : (
+                    <div className="text-muted py-5">
+                      <i className="bi bi-file-earmark-text" style={{ fontSize: '3rem' }}></i>
+                      <p>No image selected</p>
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+
+          {/* Processing Progress */}
+          {processing && (
+            <Row className="mb-4">
+              <Col>
+                <Card>
+                  <Card.Body>
+                    <div className="text-center mb-3">
+                      <Spinner animation="border" variant="primary" />
+                      <p className="mt-2 mb-0">Processing image and generating quiz questions...</p>
+                    </div>
+                    <ProgressBar animated now={100} />
+                  </Card.Body>
+                </Card>
               </Col>
-            </Form.Group>
-          </Form>
-          
-          <h4 className="mt-4 mb-3">Questions:</h4>
-          {quiz.questions && quiz.questions.map((question, qIndex) => (
-            <Card key={qIndex} className="mb-4 shadow-sm">
-              <Card.Header className="bg-light">
-                <Badge bg="secondary" className="me-2">#{qIndex + 1}</Badge>
-                <span className="fw-bold">Question {qIndex + 1}</span>
-              </Card.Header>
-              <Card.Body>
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-bold">Question text:</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={2}
-                    value={question.question}
-                    onChange={e => handleQuestionChange(qIndex, 'question', e.target.value)}
-                  />
-                </Form.Group>
-                
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-bold">Options:</Form.Label>
-                  {question.options && question.options.map((option, oIndex) => (
-                    <Row key={oIndex} className="mb-2 align-items-center">
-                      <Col xs={9}>
-                        <Form.Control
-                          type="text"
-                          value={option}
-                          onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)}
-                        />
+            </Row>
+          )}
+
+          {/* Quiz Results Section */}
+          {ocrResult && (
+            <Row className="mb-4">
+              <Col>
+                <Card>
+                  <Card.Header className="bg-success text-white">
+                    <strong>2. Generated Quiz</strong>
+                  </Card.Header>
+                  <Card.Body>
+                    <Row>
+                      <Col md={6}>
+                        <h6>📋 Quiz Details</h6>
+                        <ul className="list-unstyled">
+                          <li><strong>Title:</strong> {ocrResult.extracted_data.structured_data.title || 'Generated Quiz'}</li>
+                          <li><strong>Subject:</strong> {ocrResult.extracted_data.structured_data.subject || 'General'}</li>
+                          <li><strong>Questions:</strong> {ocrResult.extracted_data.structured_data.questions?.length || 0}</li>
+                          <li><strong>Difficulty:</strong> {ocrResult.extracted_data.structured_data.difficulty_level || 'Mixed'}</li>
+                          <li><strong>Confidence:</strong> {(ocrResult.extracted_data.confidence_score * 100).toFixed(1)}%</li>
+                        </ul>
                       </Col>
-                      <Col xs={3}>
-                        <Form.Check
-                          type="radio"
-                          id={`correct-${qIndex}-${oIndex}`}
-                          name={`correct-${qIndex}`}
-                          label="Correct"
-                          checked={option === question.answer}
-                          onChange={() => handleAnswerChange(qIndex, option)}
-                        />
+                      <Col md={6}>
+                        <h6>❓ Sample Questions</h6>
+                        <ul>
+                          {ocrResult.extracted_data.structured_data.questions?.slice(0, 3).map((q, idx) => (
+                            <li key={idx}><small>{q.question?.substring(0, 80)}...</small></li>
+                          )) || <li><small>No questions generated</small></li>}
+                        </ul>
                       </Col>
                     </Row>
-                  ))}
-                </Form.Group>
-                
-                <Form.Group as={Row} className="mb-0">
-                  <Form.Label column sm={2} className="fw-bold">Type:</Form.Label>
-                  <Col sm={10}>
-                    <Form.Control
-                      type="text"
-                      value={question.type}
-                      onChange={e => handleQuestionChange(qIndex, 'type', e.target.value)}
-                      disabled
-                      plaintext
-                      readOnly
-                    />
-                  </Col>
-                </Form.Group>
-              </Card.Body>
-            </Card>
-          ))}
-          
-          <div className="d-flex justify-content-end mt-4">
-            <Button 
-              variant="success" 
-              onClick={handleSave} 
-              disabled={saving}
-              size="lg"
-            >
-              {saving ? (
-                <>
-                  <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
-                  Saving...
-                </>
-              ) : 'Save Quiz'}
-            </Button>
-          </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+          )}
+
+          {/* Google Classroom Upload Section */}
+          {ocrResult && (
+            <Row>
+              <Col>
+                <Card>
+                  <Card.Header className="bg-warning">
+                    <strong>3. Upload to Google Classroom</strong>
+                  </Card.Header>
+                  <Card.Body>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Select Course:</Form.Label>
+                      <Form.Select
+                        value={selectedCourse}
+                        onChange={(e) => setSelectedCourse(e.target.value)}
+                      >
+                        {courses.map(course => (
+                          <option key={course.id} value={course.id}>
+                            {course.name} {course.section && `(${course.section})`}
+                          </option>
+                        ))}
+                      </Form.Select>
+                    </Form.Group>
+
+                    <Button
+                      variant="primary"
+                      onClick={uploadToClassroom}
+                      disabled={!selectedCourse || uploading}
+                      className="w-100"
+                      size="lg"
+                    >
+                      {uploading ? (
+                        <>
+                          <Spinner as="span" animation="border" size="sm" className="me-2" />
+                          Uploading Quiz to Classroom...
+                        </>
+                      ) : (
+                        '🚀 Create Quiz in Google Classroom'
+                      )}
+                    </Button>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+          )}
+
+          {/* Status Messages */}
+          {error && (
+            <Alert variant="danger" className="mt-3">
+              <strong>Error:</strong> {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert variant="success" className="mt-3">
+              {success}
+            </Alert>
+          )}
         </Card.Body>
       </Card>
     </Container>

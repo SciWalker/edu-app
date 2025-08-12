@@ -49,7 +49,7 @@ def load_lesson_plan():
         }
 
 def generate_quiz_with_gemini(lesson_plan):
-    """Generate a quiz using Gemini API based on the lesson plan."""
+    """Generate a quiz using Gemini API based on the lesson plan or content."""
     api_key = get_gemini_api_key()
     if not api_key:
         print("No Gemini API key found. Using fallback quiz generation.")
@@ -62,33 +62,65 @@ def generate_quiz_with_gemini(lesson_plan):
     topic = lesson_plan.get('topic', 'General Knowledge')
     num_questions = int(lesson_plan.get('number_of_questions', 1))
     response_type = lesson_plan.get('response_type', 'multiple_choice_question')
+    content = lesson_plan.get('content', '')
     
-    # Create prompt for Gemini
-    prompt = f"""
-    Generate a quiz about {topic} with {num_questions} questions.
-    The response type should be {response_type}.
-    
-    For each question, provide:
-    1. The question text
-    2. Four possible answers (if multiple choice)
-    3. The correct answer
-    
-    Format your response as a JSON object with this structure:
-    {{
-      "title": "Quiz title",
-      "questions": [
+    # Create prompt for Gemini with content if available
+    if content:
+        prompt = f"""
+        Based on the following educational content, generate a quiz with {num_questions} questions.
+        The response type should be {response_type}.
+        
+        Educational Content:
+        {content}
+        
+        For each question, provide:
+        1. The question text based on the content above
+        2. Four possible answers (if multiple choice)
+        3. The correct answer
+        
+        Format your response as a JSON object with this structure:
         {{
-          "question": "Question text",
-          "type": "{response_type}",
-          "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
-          "answer": "Correct option"
+          "title": "Quiz: {topic}",
+          "questions": [
+            {{
+              "question": "Question text",
+              "type": "{response_type}",
+              "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+              "answer": "Correct option"
+            }}
+            // more questions...
+          ]
         }}
-        // more questions...
-      ]
-    }}
-    
-    IMPORTANT: Make sure your response is valid JSON that can be parsed.
-    """
+        
+        IMPORTANT: Make sure your response is valid JSON that can be parsed.
+        """
+    else:
+        # Fallback to topic-based generation
+        prompt = f"""
+        Generate a quiz about {topic} with {num_questions} questions.
+        The response type should be {response_type}.
+        
+        For each question, provide:
+        1. The question text
+        2. Four possible answers (if multiple choice)
+        3. The correct answer
+        
+        Format your response as a JSON object with this structure:
+        {{
+          "title": "Quiz: {topic}",
+          "questions": [
+            {{
+              "question": "Question text",
+              "type": "{response_type}",
+              "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+              "answer": "Correct option"
+            }}
+            // more questions...
+          ]
+        }}
+        
+        IMPORTANT: Make sure your response is valid JSON that can be parsed.
+        """
     
     try:
         response = model.generate_content(prompt)
@@ -114,21 +146,34 @@ def generate_quiz_with_gemini(lesson_plan):
 def generate_fallback_quiz(lesson_plan):
     """Generate a fallback quiz if Gemini API fails."""
     topic = lesson_plan.get('topic', 'General Knowledge')
+    num_questions = int(lesson_plan.get('number_of_questions', 5))
+    
+    # Generate multiple fallback questions
+    questions = []
+    question_templates = [
+        f"What is the main concept of {topic}?",
+        f"Which of the following best describes {topic}?",
+        f"What are the key principles of {topic}?",
+        f"How is {topic} commonly applied?",
+        f"What is an important characteristic of {topic}?"
+    ]
+    
+    for i in range(min(num_questions, len(question_templates))):
+        questions.append({
+            "question": question_templates[i],
+            "type": lesson_plan.get('response_type', 'multiple_choice_question'),
+            "options": [
+                f"The fundamental principles of {topic}",
+                f"The history of {topic}",
+                f"The applications of {topic}",
+                f"The limitations of {topic}"
+            ],
+            "answer": f"The fundamental principles of {topic}"
+        })
+    
     return {
-        "title": f"Quiz for {topic}",
-        "questions": [
-            {
-                "question": f"What is the main concept of {topic}?",
-                "type": lesson_plan.get('response_type', 'multiple_choice_question'),
-                "options": [
-                    f"The fundamental principles of {topic}",
-                    f"The history of {topic}",
-                    f"The applications of {topic}",
-                    f"The limitations of {topic}"
-                ],
-                "answer": f"The fundamental principles of {topic}"
-            }
-        ]
+        "title": f"Quiz: {topic}",
+        "questions": questions
     }
 
 def save_quiz(quiz_data):
