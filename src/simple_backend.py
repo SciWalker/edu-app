@@ -161,14 +161,15 @@ def process_uploaded_image():
         if file.filename == '':
             return jsonify({"error": "No file selected"}), 400
         
-        # Get extraction type from form data
+        # Get extraction type and AI provider from form data
         extraction_type = request.form.get('extractionType', 'educational_content')
+        ai_provider = request.form.get('aiProvider', 'gemini')  # Default to Gemini
         
         # Validate file type
-        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'pdf'}
         if not ('.' in file.filename and 
                 file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
-            return jsonify({"error": "Invalid file type. Supported: PNG, JPG, JPEG, GIF, BMP, WebP"}), 400
+            return jsonify({"error": "Invalid file type. Supported: PNG, JPG, JPEG, GIF, BMP, WebP, PDF"}), 400
         
         # Create uploads directory if it doesn't exist
         uploads_dir = Path("uploads")
@@ -185,7 +186,8 @@ def process_uploaded_image():
             # Import and use OCR pipeline
             from ocr_module import OCRPipeline
             
-            pipeline = OCRPipeline()
+            # Initialize pipeline with selected AI provider
+            pipeline = OCRPipeline(ai_provider=ai_provider)
             result = pipeline.process_image(
                 image_path=str(file_path),
                 extraction_type=extraction_type,
@@ -549,6 +551,34 @@ def export_chatbot_conversation():
             "file_path": file_path,
             "message": f"Conversation exported to {file_path}"
         })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chatbot/reinitialize', methods=['POST'])
+def reinitialize_chatbots():
+    """Force reinitialize all chatbot instances with fresh system instructions."""
+    try:
+        global chatbot_instances
+        
+        # Clear all cached instances
+        for chatbot_type in chatbot_instances.keys():
+            chatbot_instances[chatbot_type] = None
+            print(f"Cleared {chatbot_type} chatbot instance")
+        
+        # Force reinitialize the current chatbot
+        chatbot = get_chatbot_instance()
+        if chatbot:
+            return jsonify({
+                "success": True,
+                "message": f"All chatbots reinitialized with updated system instructions",
+                "current_chatbot": current_chatbot_type
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": "Failed to reinitialize current chatbot"
+            }), 500
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500

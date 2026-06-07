@@ -7,6 +7,17 @@ import logging
 from typing import Optional, Dict, Any
 from PIL import Image
 import pytesseract
+from pathlib import Path
+
+try:
+    import fitz  # PyMuPDF
+    PDF_SUPPORT = True
+except ImportError:
+    try:
+        import PyPDF2
+        PDF_SUPPORT = True
+    except ImportError:
+        PDF_SUPPORT = False
 
 
 class OCRProcessor:
@@ -131,4 +142,83 @@ class OCRProcessor:
             
         except Exception as e:
             self.logger.error(f"Image preprocessing failed: {str(e)}")
+            raise
+    
+    def extract_text_from_pdf(self, pdf_path: str) -> str:
+        """
+        Extract text from a PDF file.
+        
+        Args:
+            pdf_path: Path to the PDF file
+            
+        Returns:
+            Extracted text from the PDF
+            
+        Raises:
+            Exception: If PDF processing fails or PDF support not available
+        """
+        if not PDF_SUPPORT:
+            raise Exception("PDF support not available. Please install PyMuPDF (fitz) or PyPDF2")
+        
+        if not os.path.exists(pdf_path):
+            raise FileNotFoundError(f"PDF file not found: {pdf_path}")
+        
+        try:
+            text = ""
+            
+            # Try PyMuPDF first (better text extraction)
+            try:
+                import fitz
+                doc = fitz.open(pdf_path)
+                for page in doc:
+                    text += page.get_text() + "\n"
+                doc.close()
+                return text.strip()
+            except ImportError:
+                pass
+            
+            # Fall back to PyPDF2
+            try:
+                import PyPDF2
+                with open(pdf_path, 'rb') as file:
+                    pdf_reader = PyPDF2.PdfReader(file)
+                    for page in pdf_reader.pages:
+                        text += page.extract_text() + "\n"
+                return text.strip()
+            except ImportError:
+                raise Exception("No PDF library available")
+                
+        except Exception as e:
+            self.logger.error(f"PDF text extraction failed for {pdf_path}: {str(e)}")
+            raise
+    
+    def extract_data_from_pdf(self, pdf_path: str) -> Dict[str, Any]:
+        """
+        Extract structured data from PDF including text and metadata.
+        
+        Args:
+            pdf_path: Path to the PDF file
+            
+        Returns:
+            Dictionary containing extracted text and metadata
+        """
+        try:
+            # Get basic PDF info
+            metadata = {
+                'filename': os.path.basename(pdf_path),
+                'format': 'PDF',
+                'type': 'document'
+            }
+            
+            # Extract text
+            text = self.extract_text_from_pdf(pdf_path)
+            
+            return {
+                'text': text,
+                'metadata': metadata,
+                'ocr_data': None  # No OCR data for PDFs, just text extraction
+            }
+            
+        except Exception as e:
+            self.logger.error(f"PDF data extraction failed for {pdf_path}: {str(e)}")
             raise

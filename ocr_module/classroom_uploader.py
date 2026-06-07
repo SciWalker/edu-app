@@ -46,29 +46,109 @@ class OCRClassroomUploader:
             return self._create_assignment_format(structured_data)
     
     def _create_material_format(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create material format for Google Classroom."""
-        title = data.get('title', 'Educational Material')
+        """Create comprehensive lesson plan format for Google Classroom."""
+        title = data.get('title', 'Lesson Plan')
         subject = data.get('subject', 'General')
-        topics = data.get('topics', [])
+        grade_level = data.get('grade_level', 'Not specified')
+        duration = data.get('duration', 'Not specified')
         
-        # Build description from topics
-        description = f"**Subject:** {subject}\n\n"
+        # Build comprehensive lesson plan description
+        description = f"# {title}\n\n"
+        description += f"**Subject:** {subject} | **Grade Level:** {grade_level} | **Duration:** {duration}\n"
+        description += f"**Difficulty:** {data.get('difficulty_level', 'Not specified')}\n\n"
         
-        if topics:
-            description += "**Key Topics:**\n"
-            for i, topic in enumerate(topics, 1):
-                description += f"{i}. {topic}\n"
+        # Learning Objectives
+        objectives = data.get('learning_objectives', [])
+        if objectives:
+            description += "## 🎯 Learning Objectives\n"
+            for obj in objectives:
+                description += f"• {obj}\n"
             description += "\n"
         
-        content_type = data.get('content_type', 'Notes')
-        difficulty = data.get('difficulty_level', 'Not specified')
+        # Key Topics
+        key_topics = data.get('key_topics', [])
+        if key_topics:
+            description += "## 📚 Key Topics\n"
+            for topic in key_topics:
+                description += f"• {topic}\n"
+            description += "\n"
         
-        description += f"**Content Type:** {content_type}\n"
-        description += f"**Difficulty Level:** {difficulty}\n"
+        # Lesson Structure
+        lesson_structure = data.get('lesson_structure', {})
+        if lesson_structure:
+            description += "## 🏗️ Lesson Structure\n\n"
+            
+            if lesson_structure.get('introduction'):
+                description += f"**Introduction:** {lesson_structure['introduction']}\n\n"
+            
+            main_activities = lesson_structure.get('main_activities', [])
+            if main_activities:
+                description += "**Main Activities:**\n"
+                for i, activity in enumerate(main_activities, 1):
+                    description += f"{i}. {activity}\n"
+                description += "\n"
+            
+            if lesson_structure.get('assessment'):
+                description += f"**Assessment:** {lesson_structure['assessment']}\n\n"
+            
+            if lesson_structure.get('conclusion'):
+                description += f"**Conclusion:** {lesson_structure['conclusion']}\n\n"
+        
+        # Materials Needed
+        materials = data.get('materials_needed', [])
+        if materials:
+            description += "## 📦 Materials Needed\n"
+            for material in materials:
+                description += f"• {material}\n"
+            description += "\n"
+        
+        # Vocabulary
+        vocabulary = data.get('vocabulary', [])
+        if vocabulary:
+            description += "## 📖 Key Vocabulary\n"
+            description += f"{', '.join(vocabulary)}\n\n"
+        
+        # Assessment Criteria
+        assessment_criteria = data.get('assessment_criteria', [])
+        if assessment_criteria:
+            description += "## ✅ Assessment Criteria\n"
+            for criteria in assessment_criteria:
+                description += f"• {criteria}\n"
+            description += "\n"
+        
+        # Homework Assignments
+        homework = data.get('homework_assignments', [])
+        if homework:
+            description += "## 📝 Homework Assignments\n"
+            for hw in homework:
+                description += f"• {hw}\n"
+            description += "\n"
+        
+        # Extension Activities
+        extensions = data.get('extension_activities', [])
+        if extensions:
+            description += "## 🚀 Extension Activities\n"
+            for ext in extensions:
+                description += f"• {ext}\n"
+            description += "\n"
+        
+        # Differentiation
+        differentiation = data.get('differentiation')
+        if differentiation:
+            description += "## 🔄 Differentiation\n"
+            description += f"{differentiation}\n\n"
+        
+        # Prerequisite Knowledge
+        prerequisites = data.get('prerequisite_knowledge', [])
+        if prerequisites:
+            description += "## 📋 Prerequisite Knowledge\n"
+            for prereq in prerequisites:
+                description += f"• {prereq}\n"
+            description += "\n"
         
         return {
             'title': f"{title} - {subject}",
-            'description': description,
+            'description': description.strip(),
             'workType': 'ASSIGNMENT',
             'state': 'PUBLISHED',
             'maxPoints': 0  # Material assignment, no points

@@ -17,7 +17,7 @@ import pickle
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = [
-    'https://www.googleapis.com/auth/classroom.courses.readonly',
+    'https://www.googleapis.com/auth/classroom.courses',
     'https://www.googleapis.com/auth/classroom.coursework.students',
     'https://www.googleapis.com/auth/classroom.rosters',
     'https://www.googleapis.com/auth/classroom.rosters.readonly'
@@ -173,6 +173,73 @@ def get_course_details(course_id):
     except HttpError as error:
         print(f"An error occurred: {error}")
         return None
+
+def create_course(course_name, section="", description="", room=""):
+    """
+    Create a new Google Classroom course.
+    
+    Args:
+        course_name: The name of the course
+        section: The section identifier (optional)
+        description: Course description (optional)
+        room: Room location (optional)
+        
+    Returns:
+        Dictionary containing success status and course details or error message.
+    """
+    service = get_classroom_service()
+    if not service:
+        return {"success": False, "error": "Failed to connect to Google Classroom service"}
+    
+    try:
+        course_body = {
+            'name': course_name,
+            'section': section,
+            'description': description,
+            'room': room,
+            'ownerId': 'me',
+            'courseState': 'PROVISIONED'  # Course starts in draft state
+        }
+        
+        # Remove empty fields
+        course_body = {k: v for k, v in course_body.items() if v}
+        
+        # Create the course
+        course = service.courses().create(body=course_body).execute()
+        
+        return {
+            "success": True,
+            "course_id": course.get('id'),
+            "name": course.get('name'),
+            "section": course.get('section', ''),
+            "description": course.get('description', ''),
+            "room": course.get('room', ''),
+            "enrollment_code": course.get('enrollmentCode', ''),
+            "course_state": course.get('courseState'),
+            "alternate_link": course.get('alternateLink'),
+            "message": f"Successfully created course: {course.get('name')}"
+        }
+        
+    except HttpError as error:
+        if error.resp.status == 403:
+            return {
+                "success": False,
+                "error": "Insufficient permissions to create courses. You may need to be a Google for Education user or have proper domain permissions.",
+                "course_name": course_name
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"HTTP {error.resp.status}: {str(error)}",
+                "course_name": course_name
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Unexpected error: {str(e)}",
+            "course_name": course_name
+        }
+
 
 def invite_student(course_id, student_email):
     """

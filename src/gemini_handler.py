@@ -14,7 +14,7 @@ import google.generativeai as genai
 from langgraph.graph import StateGraph, END
 
 # ─────────────────────────── Configuration ────────────────────────────
-MODEL_NAME = "gemini-2.5-flash"  
+MODEL_NAME = "gemini-2.0-flash"  
 
 # ─────────────────────────── Graph state type ─────────────────────────
 class State(TypedDict):

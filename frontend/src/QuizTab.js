@@ -13,6 +13,7 @@ function QuizTab() {
   const [selectedCourse, setSelectedCourse] = useState('');
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [aiProvider, setAiProvider] = useState('gemini');
 
   // Load Google Classroom courses on component mount
   useEffect(() => {
@@ -53,7 +54,7 @@ function QuizTab() {
 
   const processImage = async () => {
     if (!selectedFile) {
-      setError('Please select an image file first');
+      setError('Please select a file first');
       return;
     }
 
@@ -66,6 +67,7 @@ function QuizTab() {
       const formData = new FormData();
       formData.append('image', selectedFile);
       formData.append('extractionType', 'quiz'); // Use quiz extraction type
+      formData.append('aiProvider', aiProvider);
 
       const response = await fetch(`${API_BASE}/api/ocr/process-upload`, {
         method: 'POST',
@@ -76,7 +78,7 @@ function QuizTab() {
 
       if (result.pipeline_status === 'success') {
         setOcrResult(result);
-        setSuccess('✅ Image processed successfully! Review the generated quiz below.');
+        setSuccess('✅ File processed successfully! Review the generated quiz below.');
       } else {
         setError(`Quiz generation failed: ${result.error || 'Unknown error'}`);
       }
@@ -89,7 +91,7 @@ function QuizTab() {
 
   const uploadToClassroom = async () => {
     if (!ocrResult || !selectedCourse) {
-      setError('Please process an image and select a course first');
+      setError('Please process a file and select a course first');
       return;
     }
 
@@ -142,19 +144,33 @@ function QuizTab() {
             <Col md={6}>
               <Card className="h-100">
                 <Card.Header className="bg-light">
-                  <strong>1. Upload Image</strong>
+                  <strong>1. Upload File</strong>
                 </Card.Header>
                 <Card.Body>
                   <Form.Group className="mb-3">
-                    <Form.Label>Select educational content image:</Form.Label>
+                    <Form.Label>Select educational content file:</Form.Label>
                     <Form.Control
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.pdf"
                       onChange={handleFileSelect}
                       className="mb-2"
                     />
                     <Form.Text className="text-muted">
-                      Supported formats: JPG, PNG, GIF, WebP. Upload text/content that can be turned into quiz questions.
+                      Supported formats: JPG, PNG, GIF, WebP, PDF. Upload educational content to generate quiz questions.
+                    </Form.Text>
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                    <Form.Label>AI Provider for Quiz Generation:</Form.Label>
+                    <Form.Select
+                      value={aiProvider}
+                      onChange={(e) => setAiProvider(e.target.value)}
+                    >
+                      <option value="gemini">🤖 Google Gemini</option>
+                      <option value="claude">🧠 Anthropic Claude</option>
+                    </Form.Select>
+                    <Form.Text className="text-muted">
+                      Choose the AI model for generating quiz questions
                     </Form.Text>
                   </Form.Group>
 
@@ -188,25 +204,38 @@ function QuizTab() {
             <Col md={6}>
               <Card className="h-100">
                 <Card.Header className="bg-light">
-                  <strong>Image Preview</strong>
+                  <strong>File Preview</strong>
                 </Card.Header>
                 <Card.Body className="text-center">
-                  {preview ? (
-                    <img 
-                      src={preview} 
-                      alt="Preview" 
-                      style={{ 
-                        maxWidth: '100%', 
-                        maxHeight: '300px', 
-                        objectFit: 'contain',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px'
-                      }} 
-                    />
+                  {selectedFile ? (
+                    selectedFile.type === 'application/pdf' ? (
+                      <div className="text-muted py-5">
+                        <i className="bi bi-file-earmark-pdf" style={{ fontSize: '3rem', color: '#dc3545' }}></i>
+                        <p className="mt-2">{selectedFile.name}</p>
+                        <small>PDF file selected - ready for quiz generation</small>
+                      </div>
+                    ) : preview ? (
+                      <img 
+                        src={preview} 
+                        alt="Preview" 
+                        style={{ 
+                          maxWidth: '100%', 
+                          maxHeight: '300px', 
+                          objectFit: 'contain',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px'
+                        }} 
+                      />
+                    ) : (
+                      <div className="text-muted py-5">
+                        <i className="bi bi-file-earmark" style={{ fontSize: '3rem' }}></i>
+                        <p className="mt-2">{selectedFile.name}</p>
+                      </div>
+                    )
                   ) : (
                     <div className="text-muted py-5">
                       <i className="bi bi-file-earmark-text" style={{ fontSize: '3rem' }}></i>
-                      <p>No image selected</p>
+                      <p>No file selected</p>
                     </div>
                   )}
                 </Card.Body>
@@ -222,7 +251,7 @@ function QuizTab() {
                   <Card.Body>
                     <div className="text-center mb-3">
                       <Spinner animation="border" variant="primary" />
-                      <p className="mt-2 mb-0">Processing image and generating quiz questions...</p>
+                      <p className="mt-2 mb-0">Processing file and generating quiz questions...</p>
                     </div>
                     <ProgressBar animated now={100} />
                   </Card.Body>

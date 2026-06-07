@@ -13,19 +13,22 @@ from .data_extractor import DataExtractor
 class OCRPipeline:
     """Complete OCR pipeline for processing images and extracting structured data."""
     
-    def __init__(self, config_path: str = "config.yml", tesseract_cmd: Optional[str] = None):
+    def __init__(self, config_path: str = "config.yml", tesseract_cmd: Optional[str] = None, ai_provider: str = "gemini"):
         """
         Initialize OCR pipeline.
         
         Args:
             config_path: Path to configuration file
             tesseract_cmd: Optional path to tesseract executable
+            ai_provider: AI provider for data extraction ('gemini' or 'claude')
         """
         self.logger = logging.getLogger(__name__)
+        self.ai_provider = ai_provider
         
         try:
             self.ocr_processor = OCRProcessor(tesseract_cmd=tesseract_cmd)
-            self.data_extractor = DataExtractor(config_path=config_path)
+            self.data_extractor = DataExtractor(config_path=config_path, provider=ai_provider)
+            self.logger.info(f"OCR Pipeline initialized with {ai_provider.upper()} for data extraction")
         except Exception as e:
             self.logger.error(f"Failed to initialize OCR pipeline: {str(e)}")
             raise
@@ -37,30 +40,40 @@ class OCRPipeline:
         preprocess: bool = False
     ) -> Dict[str, Any]:
         """
-        Process an image through the complete OCR pipeline.
+        Process an image or PDF through the complete pipeline.
         
         Args:
-            image_path: Path to the image file
+            image_path: Path to the image or PDF file
             extraction_type: Type of data extraction to perform
-            preprocess: Whether to preprocess the image for better OCR
+            preprocess: Whether to preprocess the image for better OCR (ignored for PDFs)
             
         Returns:
             Dictionary containing OCR results and extracted structured data
         """
         try:
-            # Validate image path
-            if not Path(image_path).exists():
-                raise FileNotFoundError(f"Image file not found: {image_path}")
+            # Validate file path
+            file_path = Path(image_path)
+            if not file_path.exists():
+                raise FileNotFoundError(f"File not found: {image_path}")
             
-            # Preprocess image if requested
-            processed_image_path = image_path
-            if preprocess:
-                self.logger.info(f"Preprocessing image: {image_path}")
-                processed_image_path = self.ocr_processor.preprocess_image(image_path)
+            # Check if it's a PDF file
+            is_pdf = file_path.suffix.lower() == '.pdf'
             
-            # Extract text using OCR
-            self.logger.info(f"Extracting text from: {processed_image_path}")
-            ocr_result = self.ocr_processor.extract_data(processed_image_path)
+            if is_pdf:
+                # Process PDF
+                self.logger.info(f"Processing PDF file: {image_path}")
+                ocr_result = self.ocr_processor.extract_data_from_pdf(image_path)
+            else:
+                # Process image
+                # Preprocess image if requested
+                processed_image_path = image_path
+                if preprocess:
+                    self.logger.info(f"Preprocessing image: {image_path}")
+                    processed_image_path = self.ocr_processor.preprocess_image(image_path)
+                
+                # Extract text using OCR
+                self.logger.info(f"Extracting text from image: {processed_image_path}")
+                ocr_result = self.ocr_processor.extract_data(processed_image_path)
             
             # Extract structured data using Gemini
             self.logger.info(f"Extracting structured data using type: {extraction_type}")
@@ -71,9 +84,10 @@ class OCRPipeline:
             
             # Combine results
             result = {
-                "image_path": image_path,
-                "preprocessed": preprocess,
-                "processed_image_path": processed_image_path if preprocess else None,
+                "file_path": image_path,
+                "file_type": "PDF" if is_pdf else "Image",
+                "preprocessed": preprocess and not is_pdf,
+                "processed_image_path": processed_image_path if preprocess and not is_pdf else None,
                 "ocr_result": ocr_result,
                 "extracted_data": extracted_data,
                 "pipeline_status": "success"

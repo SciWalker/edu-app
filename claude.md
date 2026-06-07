@@ -1,5 +1,12 @@
  # edu-app Project Documentation
 
+##
+Precautions when coding:
+- Use clear and descriptive variable names.
+- Write modular code to enhance readability and maintainability.
+- don't use hard-coded values; instead, use configuration files or environment variables.
+- don't reinvent the wheel; leverage existing libraries and frameworks.
+
 ## Project Overview
 
 The `edu-app` is a full-stack educational application designed to help teachers manage their classes, students, and subjects. It provides a web-based interface for viewing and managing educational data, as well as tools for generating educational content like quizzes using AI. The backend is built with Flask and PostgreSQL, and the frontend is a React application.
